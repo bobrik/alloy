@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/grafana/alloy/internal/component/discovery"
+	"github.com/offlinehacker/buildid"
 )
 
 const (
@@ -26,6 +27,8 @@ const (
 	labelProcessUID         = "__meta_process_uid"
 	labelProcessCgroupPath  = "__meta_process_cgroup_path"
 	labelProcessContainerID = "__container_id__"
+	labelBuildID            = "__build_id__"
+	labelDpkgVersion        = "__dpkg_version__"
 )
 
 type process struct {
@@ -37,6 +40,8 @@ type process struct {
 	cgroupPath  string
 	username    string
 	uid         string
+	buildID     string
+	dpkgVersion string
 }
 
 func (p process) String() string {
@@ -76,6 +81,12 @@ func convertProcess(p process) discovery.Target {
 	if p.cgroupPath != "" {
 		t[labelProcessCgroupPath] = p.cgroupPath
 	}
+	if p.buildID != "" {
+		t[labelBuildID] = p.buildID
+	}
+	if p.dpkgVersion != "" {
+		t[labelDpkgVersion] = p.dpkgVersion
+	}
 	return discovery.NewTargetFromMap(t)
 }
 
@@ -94,10 +105,17 @@ func discover(l log.Logger, cfg *DiscoverConfig) ([]process, error) {
 		}
 		_ = level.Error(l).Log("msg", "failed to get process info", "err", e, "pid", pid)
 	}
+
+	dpkg := newDpkgVersionFinder(l)
+	err = dpkg.refresh()
+	if err != nil {
+		level.Error(l).Log("msg", "failed to compute dpkg sums", "err", err)
+	}
+
 	for _, p := range processes {
 		spid := fmt.Sprintf("%d", p.Pid)
 		var (
-			exe, cwd, commandline, containerID, cgroupPath, username, uid string
+			exe, cwd, commandline, containerID, cgroupPath, username, uid, buildID, dpkgVersion string
 		)
 		if cfg.Exe {
 			exe, err = p.Exe()
@@ -150,6 +168,30 @@ func discover(l log.Logger, cfg *DiscoverConfig) ([]process, error) {
 				continue
 			}
 		}
+		if cfg.BuildID {
+			exe, err = p.Exe()
+			if err != nil {
+				loge(int(p.Pid), err)
+				continue
+			}
+			buildID, err = getBuildId(spid, exe)
+			if err != nil {
+				loge(int(p.Pid), err)
+				continue
+			}
+		}
+		if cfg.DpkgVersion {
+			exe, err = p.Exe()
+			if err != nil {
+				loge(int(p.Pid), err)
+				continue
+			}
+			dpkgVersion, err = dpkg.getVersion(spid, exe)
+			if err != nil {
+				loge(int(p.Pid), err)
+				continue
+			}
+		}
 		res = append(res, process{
 			pid:         spid,
 			exe:         exe,
@@ -159,6 +201,8 @@ func discover(l log.Logger, cfg *DiscoverConfig) ([]process, error) {
 			cgroupPath:  cgroupPath,
 			username:    username,
 			uid:         uid,
+			buildID:     buildID,
+			dpkgVersion: dpkgVersion,
 		})
 	}
 
@@ -190,4 +234,8 @@ func getLinuxProcessCgroupPath(pid string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func getBuildId(pid, exe string) (string, error) {
+	return buildid.FromPath(path.Join("/proc", pid, "root", exe))
 }

@@ -126,11 +126,11 @@ GO_LDFLAGS   := -X $(VPREFIX).Branch=$(GIT_BRANCH)                        \
 		-X $(VPREFIXSYNTAX).Version=$(VERSION)                    \
                 -X $(VPREFIX).Revision=$(GIT_REVISION)                    \
                 -X $(VPREFIX).BuildUser=$(shell whoami)@$(shell hostname) \
-                -X $(VPREFIX).BuildDate=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+                -X $(VPREFIX).BuildDate=n/a
 
 DEFAULT_FLAGS    := $(GO_FLAGS)
 DEBUG_GO_FLAGS   := -ldflags "$(GO_LDFLAGS)" -tags "$(GO_TAGS)"
-RELEASE_GO_FLAGS := -ldflags "-s -w $(GO_LDFLAGS)" -tags "$(GO_TAGS)"
+RELEASE_GO_FLAGS := -v -ldflags "$(GO_LDFLAGS)" -tags "$(GO_TAGS)"
 
 ifeq ($(RELEASE_BUILD),1)
 GO_FLAGS := $(DEFAULT_FLAGS) $(RELEASE_GO_FLAGS)

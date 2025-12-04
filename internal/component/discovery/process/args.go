@@ -20,6 +20,8 @@ type DiscoverConfig struct {
 	UID         bool `alloy:"uid,attr,optional"`
 	ContainerID bool `alloy:"container_id,attr,optional"`
 	CgroupPath  bool `alloy:"cgroup_path,attr,optional"`
+	BuildID     bool `alloy:"build_id,attr,optional"`
+	DpkgVersion bool `alloy:"dpkg_version,attr,optional"`
 }
 
 var DefaultConfig = Arguments{
@@ -31,6 +33,8 @@ var DefaultConfig = Arguments{
 		Commandline: true,
 		ContainerID: true,
 		CgroupPath:  false,
+		BuildID:     true, // false?
+		DpkgVersion: true, // false?
 	},
 }
 

@@ -10,6 +10,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.12.0
 	github.com/Azure/go-autorest/autorest v0.11.30
 	github.com/BurntSushi/toml v1.5.0
+	github.com/ClickHouse/clickhouse-go/v2 v2.40.3
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/DataDog/go-sqllexer v0.1.9
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector v0.54.0
@@ -30,7 +31,7 @@ require (
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/boynux/squid-exporter v1.10.5-0.20230618153315-c1fae094e18e
 	github.com/buger/jsonparser v1.1.1
-	github.com/burningalchemist/sql_exporter v0.0.0-20240103092044-466b38b6abc4
+	github.com/burningalchemist/sql_exporter v0.0.0-20251028103753-6b8f871fbbe6
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/coreos/go-systemd/v22 v22.6.0
@@ -353,7 +354,6 @@ require (
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.5.0 // indirect
-	github.com/ClickHouse/clickhouse-go v1.5.4 // indirect
 	github.com/Code-Hex/go-generics-cache v1.5.1 // indirect
 	github.com/DataDog/agent-payload/v5 v5.0.171 // indirect
 	github.com/DataDog/datadog-agent/comp/core/config v0.73.0-devel.0.20251030121902-cd89eab046d6 // indirect
@@ -492,7 +492,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.11 // indirect
 	github.com/aws/aws-sdk-go-v2/service/lightsail v1.49.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi v1.25.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.27.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.39.7 // indirect
 	github.com/aws/aws-sdk-go-v2/service/shield v1.29.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.29.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.3 // indirect
@@ -517,7 +517,6 @@ require (
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect
 	github.com/cilium/ebpf v0.19.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
-	github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
@@ -670,14 +669,8 @@ require (
 	github.com/influxdata/tdigest v0.0.2-0.20210216194612-fc98d27c9e8b // indirect
 	github.com/ionos-cloud/sdk-go/v6 v6.3.4 // indirect
 	github.com/itchyny/timefmt-go v0.1.7 // indirect
-	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.14.3 // indirect
-	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgtype v1.14.4 // indirect
-	github.com/jackc/pgx/v4 v4.18.3 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
@@ -723,7 +716,7 @@ require (
 	github.com/mdlayher/vsock v1.2.1 // indirect
 	github.com/mdlayher/wifi v0.1.0 // indirect
 	github.com/metalmatze/signal v0.0.0-20210307161603-1c9aa721a97a // indirect
-	github.com/microsoft/go-mssqldb v1.9.2 // indirect
+	github.com/microsoft/go-mssqldb v1.9.3 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
@@ -753,6 +746,7 @@ require (
 	github.com/ncabatoff/go-seq v0.0.0-20180805175032-b08ef85ed833 // indirect
 	github.com/nicolai86/scaleway-sdk v1.10.2-0.20180628010248-798f60e20bb2 // indirect
 	github.com/oapi-codegen/runtime v1.1.1 // indirect
+	github.com/offlinehacker/buildid v0.1.0
 	github.com/ohler55/ojg v1.26.8 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
@@ -835,7 +829,7 @@ require (
 	github.com/shoenig/go-m1cpu v0.1.7 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
-	github.com/snowflakedb/gosnowflake v1.14.1 // indirect
+	github.com/snowflakedb/gosnowflake v1.17.0 // indirect
 	github.com/softlayer/softlayer-go v0.0.0-20180806151055-260589d94c7d // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
@@ -866,7 +860,7 @@ require (
 	github.com/ua-parser/uap-go v0.0.0-20240611065828-3a4781585db6 // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
-	github.com/vertica/vertica-sql-go v1.3.3 // indirect
+	github.com/vertica/vertica-sql-go v1.3.4 // indirect
 	github.com/vishvananda/netlink v1.3.1 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/vmware/govmomi v0.51.0 // indirect
@@ -882,7 +876,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
-	github.com/xo/dburl v0.20.0 // indirect
+	github.com/xo/dburl v0.23.8 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
@@ -977,6 +971,7 @@ require (
 
 require (
 	cyphar.com/go-pathrs v0.2.1 // indirect
+	github.com/ClickHouse/ch-go v0.68.0 // indirect
 	github.com/DataDog/datadog-agent/comp/api/api/def v0.73.0-devel.0.20251030121902-cd89eab046d6 // indirect
 	github.com/DataDog/datadog-agent/comp/core/secrets/def v0.73.0-devel.0.20251030121902-cd89eab046d6 // indirect
 	github.com/DataDog/datadog-agent/comp/core/secrets/noop-impl v0.0.0-20251030121902-cd89eab046d6 // indirect
@@ -992,6 +987,8 @@ require (
 	github.com/DataDog/datadog-agent/pkg/util/defaultpaths v0.69.3 // indirect
 	github.com/DataDog/datadog-agent/pkg/util/quantile v0.73.0-devel.0.20251030121902-cd89eab046d6 // indirect
 	github.com/digitalocean/go-metadata v0.0.0-20250129100319-e3650a3df44b // indirect
+	github.com/go-faster/city v1.0.1 // indirect
+	github.com/go-faster/errors v0.7.1 // indirect
 	github.com/go-openapi/swag/cmdutils v0.25.1 // indirect
 	github.com/go-openapi/swag/conv v0.25.1 // indirect
 	github.com/go-openapi/swag/fileutils v0.25.1 // indirect
@@ -1003,8 +1000,13 @@ require (
 	github.com/go-openapi/swag/stringutils v0.25.1 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.1 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
+	github.com/jackc/pgx/v5 v5.7.6 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/linode/go-metadata v0.2.2 // indirect
 	github.com/mitchellh/hashstructure v1.1.0 // indirect
+	github.com/paulmach/orb v0.11.1 // indirect
+	github.com/segmentio/asm v1.2.0 // indirect
+	github.com/sethvargo/go-envconfig v1.3.0 // indirect
 	github.com/twmb/franz-go/pkg/kadm v1.17.1 // indirect
 	golang.org/x/telemetry v0.0.0-20251008203120-078029d740a8 // indirect
 )
@@ -1085,7 +1087,7 @@ exclude (
 // replace go.opentelemetry.io/obi => github.com/grafana/opentelemetry-ebpf-instrumentation v1.3.9
 replace go.opentelemetry.io/obi => github.com/grafana/opentelemetry-ebpf-instrumentation v1.3.10
 
-replace go.opentelemetry.io/ebpf-profiler => github.com/grafana/opentelemetry-ebpf-profiler v0.0.202546-0.20251106085643-a00a0ef2a84c
+replace go.opentelemetry.io/ebpf-profiler => github.com/bobrik/opentelemetry-ebpf-profiler v0.0.0-20251129194929-0a005e029305
 
 // Update openshift/client-go to a version compatible with structured-merge-diff v6
 replace github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20251015124057-db0dee36e235
