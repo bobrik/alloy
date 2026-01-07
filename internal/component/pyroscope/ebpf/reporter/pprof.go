@@ -10,16 +10,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/grafana/alloy/internal/component/pyroscope/ebpf/mapper"
 	"github.com/grafana/alloy/internal/runtime/logging/level"
+	blazesym "github.com/libbpf/blazesym/go"
 
 	"github.com/go-kit/log"
 	"github.com/google/pprof/profile"
 	"github.com/prometheus/prometheus/model/labels"
 	"go.opentelemetry.io/ebpf-profiler/libpf"
 	"go.opentelemetry.io/ebpf-profiler/libpf/xsync"
-	"go.opentelemetry.io/ebpf-profiler/process"
 	"go.opentelemetry.io/ebpf-profiler/pyroscope/discovery"
-	"go.opentelemetry.io/ebpf-profiler/pyroscope/symb/irsymcache"
 	"go.opentelemetry.io/ebpf-profiler/reporter/samples"
 	"go.opentelemetry.io/ebpf-profiler/support"
 )
@@ -45,8 +45,8 @@ type Config struct {
 	Demangle                  string
 	ReporterUnsymbolizedStubs bool
 
-	ExtraNativeSymbolResolver irsymcache.NativeSymbolResolver
-	Consumer                  PPROFConsumer
+	ExecutableReporter *mapper.ExecutableReporter
+	Consumer           PPROFConsumer
 }
 type PPROFReporter struct {
 	cfg *Config
@@ -57,6 +57,8 @@ type PPROFReporter struct {
 	sd              discovery.TargetProducer
 	wg              sync.WaitGroup
 	cancelReporting context.CancelFunc
+
+	symbolizer *blazesym.Symbolizer
 }
 
 func NewPPROF(
@@ -64,6 +66,11 @@ func NewPPROF(
 	cfg *Config,
 	sd discovery.TargetProducer,
 ) *PPROFReporter {
+	symbolizer, err := blazesym.NewSymbolizer(blazesym.WithDemangle(false))
+	if err != nil {
+		// unlikely to happen
+		panic(err)
+	}
 
 	tree := make(samples.TraceEventsTree)
 	return &PPROFReporter{
@@ -71,6 +78,7 @@ func NewPPROF(
 		log:         log,
 		traceEvents: xsync.NewRWMutex(tree),
 		sd:          sd,
+		symbolizer:  symbolizer,
 	}
 }
 
@@ -178,12 +186,6 @@ func (p *PPROFReporter) reportProfile(ctx context.Context) {
 }
 
 func (p *PPROFReporter) createProfile(containerID samples.ContainerID, origin libpf.Origin, events map[samples.TraceAndMetaKey]*samples.TraceEvents) []PPROF {
-	defer func() {
-		if p.cfg.ExtraNativeSymbolResolver != nil {
-			p.cfg.ExtraNativeSymbolResolver.Cleanup()
-		}
-	}()
-
 	bs := NewProfileBuilders(BuildersOptions{
 		SampleRate:    p.cfg.SamplesPerSecond,
 		PerPIDProfile: true,
@@ -241,9 +243,56 @@ func (p *PPROFReporter) createProfile(containerID samples.ContainerID, origin li
 				switch fr.Type {
 				case libpf.NativeFrame:
 					if fr.FunctionName == libpf.NullString {
-						p.symbolizeNativeFrame(b, location, fr)
-						if location.Line == nil && p.cfg.ReporterUnsymbolizedStubs {
-							p.symbolizeStub(b, location, fr)
+						if mapping.File != "" {
+							path := fmt.Sprintf("/proc/%d/root/%s", traceKey.Pid, p.cfg.ExecutableReporter.ResolvePath(fr.MappingFile.Value().FileID))
+							syms, err := p.symbolizer.SymbolizeElfVirtOffsets(&blazesym.ElfSource{Path: path, DebugSyms: true}, []uint64{uint64(fr.AddressOrLineno)})
+							if err != nil {
+								fmt.Printf("error symbolizing %d / %v: %v\n", traceKey.Pid, path, err)
+							} else {
+								for _, sym := range syms {
+									for _, sym := range sym.Inlined {
+										name := "[unknown]"
+										if sym.Name != "" {
+											name = sym.Name
+										}
+
+										file := ""
+										line := int64(0)
+										column := int64(0)
+										if sym.CodeInfo != nil {
+											file = sym.CodeInfo.File
+											line = int64(sym.CodeInfo.Line)
+											column = int64(sym.CodeInfo.Column)
+										}
+
+										location.Line = append(location.Line, profile.Line{
+											Function: b.Function(libpf.Intern(name), libpf.Intern(file)),
+											Line:     line,
+											Column:   column,
+										})
+									}
+
+									name := "[unknown]"
+									if sym.Name != "" {
+										name = sym.Name
+									}
+
+									file := ""
+									line := int64(0)
+									column := int64(0)
+									if sym.CodeInfo != nil {
+										file = sym.CodeInfo.File
+										line = int64(sym.CodeInfo.Line)
+										column = int64(sym.CodeInfo.Column)
+									}
+
+									location.Line = append(location.Line, profile.Line{
+										Function: b.Function(libpf.Intern(name), libpf.Intern(file)),
+										Line:     line,
+										Column:   column,
+									})
+								}
+							}
 						}
 					} else {
 						location.Line = []profile.Line{{
@@ -312,45 +361,4 @@ func (p *PPROFReporter) createProfile(containerID samples.ContainerID, origin li
 		})
 	}
 	return res
-}
-
-func (p *PPROFReporter) symbolizeNativeFrame(
-	b *ProfileBuilder,
-	loc *profile.Location,
-	fr libpf.Frame,
-) {
-
-	if !fr.MappingFile.Valid() {
-		return
-	}
-	mappingFile := fr.MappingFile.Value()
-	if mappingFile.FileName == process.VdsoPathName {
-		return
-	}
-	if p.cfg.ExtraNativeSymbolResolver == nil {
-		return
-	}
-	irsymcache.SymbolizeNativeFrame(p.cfg.ExtraNativeSymbolResolver, mappingFile.FileName, fr.AddressOrLineno, mappingFile.FileID, func(si irsymcache.SourceInfo) {
-		name := si.FunctionName
-		if name == libpf.NullString && si.FilePath == libpf.NullString {
-			return
-		}
-		name = p.demangle(name)
-		loc.Mapping.HasFunctions = true
-		line := profile.Line{Function: b.Function(name, si.FilePath)}
-		loc.Line = append(loc.Line, line)
-	})
-}
-
-func (p *PPROFReporter) symbolizeStub(b *ProfileBuilder, location *profile.Location, fr libpf.Frame) {
-	if location.Mapping.File == "" {
-		return
-	}
-	location.Line = []profile.Line{{
-		Function: b.Function(
-			libpf.Intern(fmt.Sprintf("$ %s + 0x%x", location.Mapping.File, fr.AddressOrLineno)),
-			fr.SourceFile,
-		),
-	}}
-	location.Mapping.HasFunctions = true
 }

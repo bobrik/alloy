@@ -15,9 +15,9 @@ import (
 	"github.com/go-kit/log/level"
 	"github.com/grafana/alloy/internal/component"
 	"github.com/grafana/alloy/internal/component/pyroscope"
+	"github.com/grafana/alloy/internal/component/pyroscope/ebpf/mapper"
 	"github.com/grafana/alloy/internal/component/pyroscope/ebpf/reporter"
 	"github.com/grafana/alloy/internal/featuregate"
-	"github.com/grafana/pyroscope/lidia"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -26,7 +26,6 @@ import (
 	discovery2 "go.opentelemetry.io/ebpf-profiler/pyroscope/discovery"
 	"go.opentelemetry.io/ebpf-profiler/pyroscope/dynamicprofiling"
 	"go.opentelemetry.io/ebpf-profiler/pyroscope/internalshim/controller"
-	"go.opentelemetry.io/ebpf-profiler/pyroscope/symb/irsymcache"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 )
 
@@ -57,19 +56,9 @@ func New(logger log.Logger, reg prometheus.Registerer, id string, args Arguments
 
 	appendable := pyroscope.NewFanout(args.ForwardTo, id, reg)
 
-	nfs, err := irsymcache.NewFSCache(irsymcache.TableTableFactory{
-		Options: []lidia.Option{
-			lidia.WithFiles(),
-			lidia.WithLines(),
-		},
-	}, irsymcache.Options{
-		SizeEntries: uint32(args.SymbCacheSizeEntries),
-		Path:        args.SymbCachePath,
-	})
-	if err != nil {
-		return nil, err
-	}
-	cfg.ExecutableReporter = nfs
+	executableReporter := mapper.NewExecutableReporter()
+
+	cfg.ExecutableReporter = executableReporter
 
 	if dynamicProfilingPolicy {
 		cfg.Policy = &dynamicprofiling.ServiceDiscoveryTargetsOnlyPolicy{Discovery: discovery}
@@ -93,7 +82,7 @@ func New(logger log.Logger, reg prometheus.Registerer, id string, args Arguments
 		SamplesPerSecond:          int64(cfg.SamplesPerSecond),
 		Demangle:                  args.Demangle,
 		ReporterUnsymbolizedStubs: args.ReporterUnsymbolizedStubs,
-		ExtraNativeSymbolResolver: nfs,
+		ExecutableReporter:        executableReporter,
 		Consumer: reporter.PPROFConsumerFunc(func(ctx context.Context, ps []reporter.PPROF) {
 			res.sendProfiles(ctx, ps)
 		}),
@@ -140,14 +129,6 @@ func (c *Component) Run(ctx context.Context) error {
 	}
 	c.reportHealthy()
 	c.metrics.profilingSessionsTotal.Inc()
-	defer func() {
-		ctlr.Shutdown()
-		if c.cfg.ExecutableReporter != nil {
-			if nfs, ok := c.cfg.ExecutableReporter.(*irsymcache.Resolver); ok {
-				nfs.Cleanup()
-			}
-		}
-	}()
 
 	var g run.Group
 	g.Add(func() error {

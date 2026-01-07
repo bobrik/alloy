@@ -108,6 +108,7 @@ require (
 	github.com/klauspost/compress v1.18.1
 	github.com/leodido/go-syslog/v4 v4.3.0
 	github.com/lib/pq v1.10.9
+	github.com/libbpf/blazesym/go v0.0.0-20260106181946-3273c20feb6f
 	github.com/mackerelio/go-osstat v0.2.5
 	github.com/miekg/dns v1.1.68
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
